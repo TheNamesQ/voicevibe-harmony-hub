@@ -9,20 +9,53 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VotesRouteImport } from './routes/votes'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as TeamRouteImport } from './routes/team'
+import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as LineupRouteImport } from './routes/lineup'
 import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
+import { Route as SettingsGeneralRouteImport } from './routes/settings.general'
+import { Route as SettingsCriteriaRouteImport } from './routes/settings.criteria'
 import { Route as ProjectsNewRouteImport } from './routes/projects.new'
+import { Route as ParticipantsIdRouteImport } from './routes/participants.$id'
 
+const VotesRoute = VotesRouteImport.update({
+  id: '/votes',
+  path: '/votes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingRoute = RankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LineupRoute = LineupRouteImport.update({
+  id: '/lineup',
+  path: '/lineup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -35,52 +68,146 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsGeneralRoute = SettingsGeneralRouteImport.update({
+  id: '/settings/general',
+  path: '/settings/general',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsCriteriaRoute = SettingsCriteriaRouteImport.update({
+  id: '/settings/criteria',
+  path: '/settings/criteria',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsNewRoute = ProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParticipantsIdRoute = ParticipantsIdRouteImport.update({
+  id: '/participants/$id',
+  path: '/participants/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/feedback': typeof FeedbackRoute
+  '/lineup': typeof LineupRoute
+  '/ranking': typeof RankingRoute
+  '/team': typeof TeamRoute
   '/users': typeof UsersRoute
+  '/votes': typeof VotesRoute
+  '/participants/$id': typeof ParticipantsIdRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/settings/criteria': typeof SettingsCriteriaRoute
+  '/settings/general': typeof SettingsGeneralRoute
   '/projects/': typeof ProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/feedback': typeof FeedbackRoute
+  '/lineup': typeof LineupRoute
+  '/ranking': typeof RankingRoute
+  '/team': typeof TeamRoute
   '/users': typeof UsersRoute
+  '/votes': typeof VotesRoute
+  '/participants/$id': typeof ParticipantsIdRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/settings/criteria': typeof SettingsCriteriaRoute
+  '/settings/general': typeof SettingsGeneralRoute
   '/projects': typeof ProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/feedback': typeof FeedbackRoute
+  '/lineup': typeof LineupRoute
+  '/ranking': typeof RankingRoute
+  '/team': typeof TeamRoute
   '/users': typeof UsersRoute
+  '/votes': typeof VotesRoute
+  '/participants/$id': typeof ParticipantsIdRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/settings/criteria': typeof SettingsCriteriaRoute
+  '/settings/general': typeof SettingsGeneralRoute
   '/projects/': typeof ProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/feedback' | '/users' | '/projects/new' | '/projects/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/feedback'
+    | '/lineup'
+    | '/ranking'
+    | '/team'
+    | '/users'
+    | '/votes'
+    | '/participants/$id'
+    | '/projects/new'
+    | '/settings/criteria'
+    | '/settings/general'
+    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/feedback' | '/users' | '/projects/new' | '/projects'
-  id: '__root__' | '/' | '/feedback' | '/users' | '/projects/new' | '/projects/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/feedback'
+    | '/lineup'
+    | '/ranking'
+    | '/team'
+    | '/users'
+    | '/votes'
+    | '/participants/$id'
+    | '/projects/new'
+    | '/settings/criteria'
+    | '/settings/general'
+    | '/projects'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/feedback'
+    | '/lineup'
+    | '/ranking'
+    | '/team'
+    | '/users'
+    | '/votes'
+    | '/participants/$id'
+    | '/projects/new'
+    | '/settings/criteria'
+    | '/settings/general'
+    | '/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   FeedbackRoute: typeof FeedbackRoute
+  LineupRoute: typeof LineupRoute
+  RankingRoute: typeof RankingRoute
+  TeamRoute: typeof TeamRoute
   UsersRoute: typeof UsersRoute
+  VotesRoute: typeof VotesRoute
+  ParticipantsIdRoute: typeof ParticipantsIdRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
+  SettingsCriteriaRoute: typeof SettingsCriteriaRoute
+  SettingsGeneralRoute: typeof SettingsGeneralRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/votes': {
+      id: '/votes'
+      path: '/votes'
+      fullPath: '/votes'
+      preLoaderRoute: typeof VotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/users': {
       id: '/users'
       path: '/users'
@@ -88,11 +215,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranking': {
+      id: '/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof RankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lineup': {
+      id: '/lineup'
+      path: '/lineup'
+      fullPath: '/lineup'
+      preLoaderRoute: typeof LineupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feedback': {
       id: '/feedback'
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -109,6 +264,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/general': {
+      id: '/settings/general'
+      path: '/settings/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof SettingsGeneralRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/criteria': {
+      id: '/settings/criteria'
+      path: '/settings/criteria'
+      fullPath: '/settings/criteria'
+      preLoaderRoute: typeof SettingsCriteriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects/new': {
       id: '/projects/new'
       path: '/projects/new'
@@ -116,14 +285,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/participants/$id': {
+      id: '/participants/$id'
+      path: '/participants/$id'
+      fullPath: '/participants/$id'
+      preLoaderRoute: typeof ParticipantsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   FeedbackRoute: FeedbackRoute,
+  LineupRoute: LineupRoute,
+  RankingRoute: RankingRoute,
+  TeamRoute: TeamRoute,
   UsersRoute: UsersRoute,
+  VotesRoute: VotesRoute,
+  ParticipantsIdRoute: ParticipantsIdRoute,
   ProjectsNewRoute: ProjectsNewRoute,
+  SettingsCriteriaRoute: SettingsCriteriaRoute,
+  SettingsGeneralRoute: SettingsGeneralRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport
