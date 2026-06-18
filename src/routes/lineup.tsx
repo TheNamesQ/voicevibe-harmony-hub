@@ -1,9 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/app-shell";
 import { RequireProject } from "@/components/require-project";
-import { rigaGroups, type Group, type Participant } from "@/lib/demo-data";
+import { rigaGroups as initialGroups, type Group, type Participant } from "@/lib/demo-data";
 import { useMemo, useState } from "react";
-import { Plus, Search, ArrowUpDown, CheckCircle2, Filter, MoreHorizontal } from "lucide-react";
+import { Plus, Search, ArrowUpDown, CheckCircle2, Filter, MoreHorizontal, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/lineup")({
   component: () => (
@@ -16,7 +33,8 @@ export const Route = createFileRoute("/lineup")({
 type StatusFilter = "all" | "scored" | "pending";
 
 function Lineup() {
-  const [activeGroupId, setActiveGroupId] = useState<string>(rigaGroups[0].id);
+  const [groups, setGroups] = useState<Group[]>(() => initialGroups.map((g) => ({ ...g, participants: [...g.participants] })));
+  const [activeGroupId, setActiveGroupId] = useState<string>(groups[0].id);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [query, setQuery] = useState("");
@@ -26,10 +44,17 @@ function Lineup() {
   const [pSong, setPSong] = useState("");
   const [pStudio, setPStudio] = useState("");
 
-  const activeGroup = useMemo(
-    () => rigaGroups.find((g) => g.id === activeGroupId) ?? rigaGroups[0],
-    [activeGroupId],
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  const activeGroup = useMemo(
+    () => groups.find((g) => g.id === activeGroupId) ?? groups[0],
+    [groups, activeGroupId],
+  );
+
+  const canReorderParticipants = !query.trim() && statusFilter === "all";
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -45,11 +70,36 @@ function Lineup() {
     });
   }, [activeGroup, query, statusFilter]);
 
-  const totalParticipants = rigaGroups.reduce((s, g) => s + g.participants.length, 0);
+  const totalParticipants = groups.reduce((s, g) => s + g.participants.length, 0);
 
   function resetParticipantForm() {
     setAddingParticipant(false);
     setPName(""); setPSong(""); setPStudio("");
+  }
+
+  function handleGroupDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setGroups((gs) => {
+      const oldIdx = gs.findIndex((g) => g.id === active.id);
+      const newIdx = gs.findIndex((g) => g.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return gs;
+      return arrayMove(gs, oldIdx, newIdx);
+    });
+  }
+
+  function handleParticipantDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setGroups((gs) =>
+      gs.map((g) => {
+        if (g.id !== activeGroupId) return g;
+        const oldIdx = g.participants.findIndex((p) => p.id === active.id);
+        const newIdx = g.participants.findIndex((p) => p.id === over.id);
+        if (oldIdx < 0 || newIdx < 0) return g;
+        return { ...g, participants: arrayMove(g.participants, oldIdx, newIdx) };
+      }),
+    );
   }
 
   return (
@@ -57,7 +107,7 @@ function Lineup() {
       <PageHeader
         breadcrumb="Workspace · Lineup"
         title="Lineup"
-        description={`${rigaGroups.length} groups · ${totalParticipants} participants across the project.`}
+        description={`${groups.length} groups · ${totalParticipants} participants. Drag rows to reorder performance order.`}
       />
 
       <div className="px-8 py-7">
@@ -68,52 +118,22 @@ function Lineup() {
               <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Groups
               </h2>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{rigaGroups.length}</span>
+              <span className="text-[11px] text-muted-foreground tabular-nums">{groups.length}</span>
             </div>
 
             <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-              {rigaGroups.map((g) => {
-                const scored = g.participants.filter((p) => p.scored).length;
-                const total = g.participants.length;
-                const pct = total ? Math.round((scored / total) * 100) : 0;
-                const active = g.id === activeGroupId;
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => setActiveGroupId(g.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                      active
-                        ? "bg-brand-soft/60 border-brand/30 text-brand-dark"
-                        : "border-transparent hover:bg-surface hover:border-hairline text-foreground/80"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium truncate">{g.name}</span>
-                      <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums ${
-                          active ? "bg-brand/15 text-brand-dark" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {total}
-                      </span>
-                    </div>
-                    {g.ageRange && (
-                      <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{g.ageRange}</div>
-                    )}
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-success transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground tabular-nums w-10 text-right">
-                        {scored}/{total}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd}>
+                <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+                  {groups.map((g) => (
+                    <SortableGroupItem
+                      key={g.id}
+                      group={g}
+                      active={g.id === activeGroupId}
+                      onSelect={() => setActiveGroupId(g.id)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </nav>
 
             <div className="p-3 border-t border-hairline bg-surface">
@@ -200,6 +220,12 @@ function Lineup() {
               </div>
             </header>
 
+            {!canReorderParticipants && (
+              <div className="px-5 py-2 border-b border-hairline bg-amber-50/60 text-[11px] text-amber-800">
+                Drag reordering is disabled while a search or filter is active. Clear filters to reorder.
+              </div>
+            )}
+
             <div className="flex-1 overflow-y-auto">
               {filtered.length === 0 && !addingParticipant ? (
                 <div className="py-16 text-center">
@@ -210,64 +236,74 @@ function Lineup() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="sticky top-0 bg-surface border-b border-hairline text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                      <th className="w-14 py-2.5 px-4">#</th>
+                      <th className="w-8 py-2.5 px-2"></th>
+                      <th className="w-14 py-2.5 px-2">#</th>
                       <th className="py-2.5 px-4">Performer &amp; Song</th>
                       <th className="py-2.5 px-4">Studio</th>
                       <th className="py-2.5 px-4 w-32">Status</th>
                       <th className="w-12 py-2.5 px-4"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-hairline">
-                    {filtered.map((p, i) => (
-                      <Row key={p.id} p={p} order={i + 1} />
-                    ))}
-                    {addingParticipant && (
-                      <tr className="bg-brand-soft/30">
-                        <td className="py-2 px-4 text-xs font-semibold text-brand-dark tabular-nums">
-                          {String(activeGroup.participants.length + 1).padStart(3, "0")}
-                        </td>
-                        <td className="py-2 px-4">
-                          <input
-                            autoFocus
-                            value={pName}
-                            onChange={(e) => setPName(e.target.value)}
-                            placeholder="Name"
-                            className="w-full px-2 py-1 rounded border border-hairline bg-surface text-sm focus:border-brand outline-none mb-1"
-                          />
-                          <input
-                            value={pSong}
-                            onChange={(e) => setPSong(e.target.value)}
-                            placeholder="Song / piece"
-                            className="w-full px-2 py-1 rounded border border-hairline bg-surface text-xs focus:border-brand outline-none"
-                          />
-                        </td>
-                        <td className="py-2 px-4">
-                          <input
-                            value={pStudio}
-                            onChange={(e) => setPStudio(e.target.value)}
-                            placeholder="Studio"
-                            className="w-full px-2 py-1 rounded border border-hairline bg-surface text-sm focus:border-brand outline-none"
-                          />
-                        </td>
-                        <td className="py-2 px-4" colSpan={2}>
-                          <div className="flex gap-1.5 justify-end">
-                            <button
-                              onClick={resetParticipantForm}
-                              className="px-2.5 py-1 rounded-md bg-brand text-brand-foreground text-xs font-semibold hover:bg-brand-dark"
-                            >
-                              Add
-                            </button>
-                            <button
-                              onClick={resetParticipantForm}
-                              className="px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleParticipantDragEnd}
+                  >
+                    <SortableContext items={filtered.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+                      <tbody className="divide-y divide-hairline">
+                        {filtered.map((p, i) => (
+                          <SortableRow key={p.id} p={p} order={i + 1} disabled={!canReorderParticipants} />
+                        ))}
+                        {addingParticipant && (
+                          <tr className="bg-brand-soft/30">
+                            <td></td>
+                            <td className="py-2 px-2 text-xs font-semibold text-brand-dark tabular-nums">
+                              {String(activeGroup.participants.length + 1).padStart(3, "0")}
+                            </td>
+                            <td className="py-2 px-4">
+                              <input
+                                autoFocus
+                                value={pName}
+                                onChange={(e) => setPName(e.target.value)}
+                                placeholder="Name"
+                                className="w-full px-2 py-1 rounded border border-hairline bg-surface text-sm focus:border-brand outline-none mb-1"
+                              />
+                              <input
+                                value={pSong}
+                                onChange={(e) => setPSong(e.target.value)}
+                                placeholder="Song / piece"
+                                className="w-full px-2 py-1 rounded border border-hairline bg-surface text-xs focus:border-brand outline-none"
+                              />
+                            </td>
+                            <td className="py-2 px-4">
+                              <input
+                                value={pStudio}
+                                onChange={(e) => setPStudio(e.target.value)}
+                                placeholder="Studio"
+                                className="w-full px-2 py-1 rounded border border-hairline bg-surface text-sm focus:border-brand outline-none"
+                              />
+                            </td>
+                            <td className="py-2 px-4" colSpan={2}>
+                              <div className="flex gap-1.5 justify-end">
+                                <button
+                                  onClick={resetParticipantForm}
+                                  className="px-2.5 py-1 rounded-md bg-brand text-brand-foreground text-xs font-semibold hover:bg-brand-dark"
+                                >
+                                  Add
+                                </button>
+                                <button
+                                  onClick={resetParticipantForm}
+                                  className="px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </SortableContext>
+                  </DndContext>
                 </table>
               )}
 
@@ -289,10 +325,106 @@ function Lineup() {
   );
 }
 
-function Row({ p, order }: { p: Participant; order: number }) {
+function SortableGroupItem({
+  group,
+  active,
+  onSelect,
+}: {
+  group: Group;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: group.id });
+  const scored = group.participants.filter((p) => p.scored).length;
+  const total = group.participants.length;
+  const pct = total ? Math.round((scored / total) * 100) : 0;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  } as React.CSSProperties;
+
   return (
-    <tr className="group hover:bg-muted/40 transition-colors">
-      <td className="py-2.5 px-4 text-xs font-semibold text-muted-foreground tabular-nums">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-stretch rounded-lg border transition-colors ${
+        active
+          ? "bg-brand-soft/60 border-brand/30"
+          : "border-transparent hover:bg-surface hover:border-hairline"
+      } ${isDragging ? "shadow-card" : ""}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="px-1.5 py-3 text-muted-foreground/40 hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder group"
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      <button onClick={onSelect} className="flex-1 text-left py-2.5 pr-3 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className={`text-sm font-medium truncate ${active ? "text-brand-dark" : "text-foreground"}`}>
+            {group.name}
+          </span>
+          <span
+            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums ${
+              active ? "bg-brand/15 text-brand-dark" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {total}
+          </span>
+        </div>
+        {group.ageRange && (
+          <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{group.ageRange}</div>
+        )}
+        <div className="mt-2 flex items-center gap-2">
+          <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-[10px] font-semibold text-muted-foreground tabular-nums w-10 text-right">
+            {scored}/{total}
+          </span>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function SortableRow({ p, order, disabled }: { p: Participant; order: number; disabled: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: p.id,
+    disabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    position: "relative" as const,
+    zIndex: isDragging ? 10 : "auto",
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`group hover:bg-muted/40 transition-colors ${isDragging ? "bg-surface shadow-card" : ""}`}
+    >
+      <td className="py-2.5 px-2 align-middle">
+        <button
+          {...attributes}
+          {...listeners}
+          disabled={disabled}
+          className="text-muted-foreground/40 hover:text-foreground cursor-grab active:cursor-grabbing disabled:opacity-30 disabled:cursor-not-allowed touch-none"
+          aria-label="Drag to reorder participant"
+        >
+          <GripVertical className="size-4" />
+        </button>
+      </td>
+      <td className="py-2.5 px-2 text-xs font-semibold text-muted-foreground tabular-nums">
         {String(order).padStart(3, "0")}
       </td>
       <td className="py-2.5 px-4 min-w-0">
