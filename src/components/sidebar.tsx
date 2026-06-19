@@ -44,19 +44,16 @@ export function Sidebar() {
   return (
     <aside className="w-[244px] shrink-0 border-r border-hairline bg-surface flex flex-col h-screen sticky top-0">
       {/* Brand */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-lg bg-brand grid place-items-center shadow-sm">
-            <div className="size-3.5 rounded-full bg-brand-foreground/85" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-semibold tracking-tight leading-none">VoiceVibe</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-              {role === "superadmin" ? "Platform" : "Organizer"}
-            </span>
-          </div>
+      <div className="px-5 pt-5 pb-3 flex items-center gap-2.5">
+        <div className="size-8 rounded-lg bg-brand grid place-items-center shadow-sm">
+          <div className="size-3.5 rounded-full bg-brand-foreground/85" />
         </div>
-        <LanguageSwitcher />
+        <div className="flex flex-col">
+          <span className="text-[15px] font-semibold tracking-tight leading-none">VoiceVibe</span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+            {role === "superadmin" ? "Platform" : "Organizer"}
+          </span>
+        </div>
       </div>
 
       {/* Project switcher */}
@@ -77,7 +74,8 @@ export function Sidebar() {
           </div>
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
-        <div className="flex justify-end mt-1.5">
+        <div className="flex items-center justify-between mt-2 px-1">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Current plan</span>
           <TierBadge compact />
         </div>
       </div>
@@ -104,6 +102,11 @@ export function Sidebar() {
           <NavGroup label="Workspace" items={projectNav} pathname={pathname} />
         )}
       </nav>
+
+      {/* Language switcher */}
+      <div className="px-3 py-2 border-t border-hairline flex justify-end">
+        <LanguageSwitcher variant="icon" />
+      </div>
 
       {/* User */}
       <div className="p-3 border-t border-hairline">
