@@ -56,6 +56,17 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* Tier + Language */}
+      <div className="px-3 pb-3 flex items-center gap-2">
+        <TierBadge />
+        <div className="ml-auto">
+          <LanguageSwitcher />
+        </div>
+      </div>
+          </span>
+        </div>
+      </div>
+
       {/* Project switcher */}
       <div className="px-3 pb-3">
         <button className="w-full flex items-center gap-2.5 rounded-lg border border-hairline bg-surface-2/60 hover:bg-surface-2 transition px-2.5 py-2 text-left">
