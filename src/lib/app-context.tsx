@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { projects, type Project } from "./demo-data";
 
 export type Role = "superadmin" | "organizer";
+export type Tier = "free" | "basic" | "pro" | "premium";
+export type Lang = "en" | "lv";
 
 interface AppContextValue {
   role: Role;
@@ -11,6 +13,10 @@ interface AppContextValue {
   activeProject: Project | null;
   enterProject: (id: string) => void;
   exitProject: () => void;
+  tier: Tier;
+  setTier: (t: Tier) => void;
+  lang: Lang;
+  setLang: (l: Lang) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -20,13 +26,19 @@ const ORGANIZER_DEFAULT_PROJECT = "riga-2025";
 export function AppProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>("superadmin");
   const [activeProjectId, setActiveProjectIdState] = useState<string | null>(null);
+  const [tier, setTierState] = useState<Tier>("pro");
+  const [lang, setLangState] = useState<Lang>("en");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const r = (localStorage.getItem("vv:role") as Role | null) ?? "superadmin";
       const p = localStorage.getItem("vv:activeProject");
+      const t = (localStorage.getItem("vv:tier") as Tier | null) ?? "pro";
+      const l = (localStorage.getItem("vv:lang") as Lang | null) ?? "en";
       setRoleState(r);
+      setTierState(t);
+      setLangState(l);
       if (r === "organizer") {
         setActiveProjectIdState(p ?? ORGANIZER_DEFAULT_PROJECT);
       } else {
@@ -57,6 +69,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {}
   };
 
+  const setTier = (t: Tier) => {
+    setTierState(t);
+    try { localStorage.setItem("vv:tier", t); } catch {}
+  };
+
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try { localStorage.setItem("vv:lang", l); } catch {}
+  };
+
   const enterProject = (id: string) => setActiveProjectId(id);
   const exitProject = () => {
     if (role === "superadmin") setActiveProjectId(null);
@@ -66,13 +88,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ? projects.find((p) => p.id === activeProjectId) ?? null
     : null;
 
-  // Avoid showing pre-hydration mismatch: render children either way; UI subtly
-  // adapts on hydration. (Acceptable for demo dashboard.)
   void hydrated;
 
   return (
     <AppContext.Provider
-      value={{ role, setRole, activeProjectId, setActiveProjectId, activeProject, enterProject, exitProject }}
+      value={{
+        role, setRole,
+        activeProjectId, setActiveProjectId, activeProject,
+        enterProject, exitProject,
+        tier, setTier,
+        lang, setLang,
+      }}
     >
       {children}
     </AppContext.Provider>
