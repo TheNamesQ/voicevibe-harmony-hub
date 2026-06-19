@@ -14,6 +14,8 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
+import { TierBadge } from "./tier-badge";
+import { LanguageSwitcher } from "./language-switcher";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
