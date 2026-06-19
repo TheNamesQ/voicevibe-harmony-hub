@@ -74,7 +74,8 @@ export function Sidebar() {
           </div>
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
-        <div className="flex justify-end mt-1.5">
+        <div className="flex items-center justify-between mt-2 px-1">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Current plan</span>
           <TierBadge compact />
         </div>
       </div>
