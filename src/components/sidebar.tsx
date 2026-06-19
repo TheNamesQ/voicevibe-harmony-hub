@@ -63,9 +63,6 @@ export function Sidebar() {
           <LanguageSwitcher />
         </div>
       </div>
-          </span>
-        </div>
-      </div>
 
       {/* Project switcher */}
       <div className="px-3 pb-3">
