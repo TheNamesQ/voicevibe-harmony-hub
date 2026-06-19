@@ -14,6 +14,8 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
+import { TierBadge } from "./tier-badge";
+import { LanguageSwitcher } from "./language-switcher";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -51,6 +53,14 @@ export function Sidebar() {
           <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
             {role === "superadmin" ? "Platform" : "Organizer"}
           </span>
+        </div>
+      </div>
+
+      {/* Tier + Language */}
+      <div className="px-3 pb-3 flex items-center gap-2">
+        <TierBadge />
+        <div className="ml-auto">
+          <LanguageSwitcher />
         </div>
       </div>
 
