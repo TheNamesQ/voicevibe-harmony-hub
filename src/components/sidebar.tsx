@@ -90,7 +90,8 @@ export function Sidebar() {
         )}
         {role === "superadmin" && inProject && (
           <>
-            <NavGroup label={activeProject!.name} items={projectNav} pathname={pathname} />
+            <NavGroup label={activeProject!.name} items={projectNavMain} pathname={pathname} />
+            <NavGroup label="Results" items={projectNavResults} pathname={pathname} />
             <div className="mt-4 px-1">
               <button
                 onClick={exitProject}
@@ -102,7 +103,10 @@ export function Sidebar() {
           </>
         )}
         {role === "organizer" && (
-          <NavGroup label="Workspace" items={projectNav} pathname={pathname} />
+          <>
+            <NavGroup label="Main" items={projectNavMain} pathname={pathname} />
+            <NavGroup label="Results" items={projectNavResults} pathname={pathname} />
+          </>
         )}
       </nav>
 
