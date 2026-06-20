@@ -48,7 +48,7 @@ function ParticipantDetail() {
         }
         title={p.name}
         description={`${group?.name ?? ""} · ${p.studio}`}
-        actions={
+        action={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
               <Mail className="size-3.5" /> Email report
