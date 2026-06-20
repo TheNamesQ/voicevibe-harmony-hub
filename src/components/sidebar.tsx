@@ -25,14 +25,17 @@ const superadminNav: NavItem[] = [
   { to: "/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
-const projectNav: NavItem[] = [
+const projectNavMain: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/lineup", label: "Lineup", icon: ListOrdered },
   { to: "/team", label: "Team", icon: UsersRound },
+  { to: "/settings/general", label: "Contest settings", icon: Settings },
+  { to: "/settings/criteria", label: "Scoring criteria", icon: Sliders },
+];
+
+const projectNavResults: NavItem[] = [
   { to: "/ranking", label: "Ranking", icon: Trophy },
-  { to: "/votes", label: "Vote Log", icon: ScrollText },
-  { to: "/settings/general", label: "Settings", icon: Settings },
-  { to: "/settings/criteria", label: "Scoring Criteria", icon: Sliders },
+  { to: "/votes", label: "Vote log", icon: ScrollText },
 ];
 
 export function Sidebar() {
@@ -87,7 +90,8 @@ export function Sidebar() {
         )}
         {role === "superadmin" && inProject && (
           <>
-            <NavGroup label={activeProject!.name} items={projectNav} pathname={pathname} />
+            <NavGroup label={activeProject!.name} items={projectNavMain} pathname={pathname} />
+            <NavGroup label="Results" items={projectNavResults} pathname={pathname} />
             <div className="mt-4 px-1">
               <button
                 onClick={exitProject}
@@ -99,7 +103,10 @@ export function Sidebar() {
           </>
         )}
         {role === "organizer" && (
-          <NavGroup label="Workspace" items={projectNav} pathname={pathname} />
+          <>
+            <NavGroup label="Main" items={projectNavMain} pathname={pathname} />
+            <NavGroup label="Results" items={projectNavResults} pathname={pathname} />
+          </>
         )}
       </nav>
 
