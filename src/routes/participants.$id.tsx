@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/app-shell";
 import { RequireProject } from "@/components/require-project";
 import { Button } from "@/components/ui/button";
 import { findParticipant, getGroup, getParticipantScores, rigaCriteria, rigaRanking } from "@/lib/demo-data";
-import { ArrowLeft, FileDown, Mail } from "lucide-react";
+import { ArrowLeft, BarChart3, FileDown, Mail, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/participants/$id")({
   component: () => (
@@ -29,15 +29,17 @@ function ParticipantDetail() {
   const group = getGroup(p.groupId);
   const scores = getParticipantScores(p.id);
   const rank = rigaRanking.findIndex((r) => r.participantId === p.id);
-  const ranking = rigaRanking.find((r) => r.participantId === p.id);
   const criteriaKeys = ["technique", "expression", "presence"] as const;
+  const maxCriterion = rigaCriteria[0].max;
+  const totalMax = rigaCriteria.reduce((a, c) => a + c.max, 0);
 
-  const avgPerCriterion = rigaCriteria.map((c, idx) => {
-    const key = criteriaKeys[idx];
-    const vals = scores.map((s) => s[key]);
-    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    return { id: c.id, name: c.name, avg, max: c.max };
+  const judgeAverages = scores.map((s) => {
+    const total = s.technique + s.expression + s.presence;
+    return { total, avg: total / rigaCriteria.length };
   });
+  const finalAvg =
+    judgeAverages.reduce((a, j) => a + j.avg, 0) / judgeAverages.length;
+  const ringPct = (finalAvg / maxCriterion) * 100;
 
   return (
     <div>
@@ -61,139 +63,191 @@ function ParticipantDetail() {
         }
       />
 
-      <div className="px-8 py-6 max-w-6xl space-y-4">
-        {/* Summary row: performance info + standing + criterion bars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Performance info */}
-          <div className="rounded-xl border border-hairline bg-surface p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Performance
+      <div className="px-8 py-6 max-w-5xl mx-auto space-y-8">
+        {/* Participant + Final result */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Participant */}
+          <section>
+            <SectionLabel icon={<BarChart3 className="size-3.5" />}>Participant</SectionLabel>
+            <div className="rounded-2xl border border-hairline bg-gradient-to-br from-brand-soft/60 via-surface to-surface p-6 space-y-5">
+              <Field label="Participant Name" value={p.name} large />
+              <Field label="Performed Song" value={`"${p.song}"`} />
+              <Field label="Studio / School" value={p.studio} />
+              <Field
+                label="Competition Group"
+                value={group?.name ? `${group.name}${group.ageRange ? " · " + group.ageRange : ""}` : "—"}
+              />
             </div>
-            <dl className="space-y-2.5">
-              <Row label="Number" value={`#${p.number}`} />
-              <Row label="Song" value={p.song} highlight />
-              <Row label="Group" value={group?.name ?? "—"} />
-              <Row label="Studio" value={p.studio} />
-            </dl>
-          </div>
+          </section>
 
-          {/* Standing + criterion bars (spans 2) */}
-          <div className="md:col-span-2 rounded-xl border border-hairline bg-surface p-4 flex flex-col md:flex-row gap-5">
-            <div className="flex items-center gap-6 md:pr-6 md:border-r border-hairline">
-              <div className="text-center">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  Rank
-                </div>
-                <div className="text-3xl font-semibold tabular-nums tracking-tight">
-                  {rank + 1}
-                  <span className="text-sm font-normal text-muted-foreground ml-0.5">
-                    /{rigaRanking.length}
-                  </span>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  Avg score
-                </div>
-                <div className="text-3xl font-semibold tabular-nums tracking-tight text-brand">
-                  {ranking ? ranking.total.toFixed(1) : "—"}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-grow space-y-2.5 py-1 min-w-0">
-              {avgPerCriterion.map((c) => (
-                <div key={c.id} className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-medium">
-                    <span className="text-muted-foreground">{c.name}</span>
-                    <span className="tabular-nums">
-                      {c.avg.toFixed(1)}<span className="text-muted-foreground">/{c.max}</span>
+          {/* Final result */}
+          <section>
+            <SectionLabel icon={<BarChart3 className="size-3.5" />}>Final Result</SectionLabel>
+            <div className="rounded-2xl border border-hairline bg-gradient-to-br from-brand-soft/70 via-brand-soft/20 to-surface p-6 flex flex-col items-center justify-center min-h-[300px]">
+              <ScoreRing pct={ringPct} value={finalAvg.toFixed(1)} max={maxCriterion} />
+              <p className="mt-5 text-sm text-muted-foreground">
+                Averaged across <span className="font-semibold text-foreground">{scores.length} judges</span>
+                {rank >= 0 && (
+                  <>
+                    {" · "}Rank{" "}
+                    <span className="font-semibold text-foreground">
+                      #{rank + 1}
+                      <span className="text-muted-foreground font-normal">/{rigaRanking.length}</span>
                     </span>
-                  </div>
-                  <div className="h-1.5 bg-brand/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand rounded-full"
-                      style={{ width: `${(c.avg / c.max) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                  </>
+                )}
+              </p>
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Judge feedback grid */}
-        <div>
-          <div className="flex items-center justify-between mb-3 px-0.5">
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Judge scores & comments
-            </h3>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{scores.length} judges</span>
+        {/* Judges evaluation */}
+        <section>
+          <div className="flex items-end justify-between mb-3">
+            <SectionLabel icon={<BarChart3 className="size-3.5" />} noMargin>
+              Judges Evaluation
+            </SectionLabel>
+            <span className="text-[11px] text-muted-foreground">
+              {scores.length} judges · scored 1–{maxCriterion} per criterion
+            </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
+          <div className="space-y-4">
             {scores.map((s, i) => {
               const total = s.technique + s.expression + s.presence;
+              const avg = total / rigaCriteria.length;
               const initials = s.judge.split(" ").map((n) => n[0]).slice(0, 2).join("");
+              const items = [
+                { name: rigaCriteria[0].name, val: s.technique },
+                { name: rigaCriteria[1].name, val: s.expression },
+                { name: rigaCriteria[2].name, val: s.presence },
+              ];
               return (
-                <div
+                <article
                   key={i}
-                  className="rounded-xl border border-hairline bg-surface overflow-hidden flex flex-col"
+                  className="rounded-2xl border border-hairline bg-surface overflow-hidden"
                 >
-                  <div className="px-4 py-2.5 border-b border-hairline flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-7 rounded-full bg-brand/10 text-brand flex items-center justify-center text-[10px] font-semibold shrink-0">
+                  {/* Header */}
+                  <header className="px-6 py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-10 rounded-xl bg-brand-soft text-brand flex items-center justify-center text-xs font-bold shrink-0">
                         {initials}
                       </div>
-                      <span className="text-xs font-semibold truncate">{s.judge}</span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">{s.judge}</div>
+                        <div className="text-[11px] text-muted-foreground">Judge</div>
+                      </div>
                     </div>
-                    <span className="px-2 py-0.5 bg-brand-soft text-brand text-xs font-semibold rounded tabular-nums shrink-0">
-                      {total}
-                    </span>
-                  </div>
-                  <div className="p-4 flex-grow flex flex-col gap-3">
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {[
-                        { name: rigaCriteria[0].name, val: s.technique, max: rigaCriteria[0].max },
-                        { name: rigaCriteria[1].name, val: s.expression, max: rigaCriteria[1].max },
-                        { name: rigaCriteria[2].name, val: s.presence, max: rigaCriteria[2].max },
-                      ].map((c) => (
-                        <div key={c.name} className="text-center p-1.5 bg-muted/40 rounded">
-                          <div className="text-[9px] uppercase font-semibold tracking-wider text-muted-foreground truncate">
-                            {c.name}
-                          </div>
-                          <div className="text-xs font-semibold tabular-nums mt-0.5">
-                            {c.val}
-                            <span className="text-muted-foreground font-normal">/{c.max}</span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-8 shrink-0">
+                      <Stat label="Total" value={<><span className="font-bold tabular-nums">{total}</span><span className="text-muted-foreground text-xs">/{totalMax}</span></>} />
+                      <Stat label="Average" value={<span className="font-bold tabular-nums text-brand">{avg.toFixed(1)}</span>} />
                     </div>
-                    {s.comment && (
-                      <p className="text-[11px] leading-relaxed italic text-muted-foreground">
-                        "{s.comment}"
-                      </p>
-                    )}
+                  </header>
+
+                  {/* Criteria grid */}
+                  <div className="px-6 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
+                    {items.map((c) => (
+                      <div key={c.name} className="flex items-center justify-between gap-3 py-1">
+                        <span className="text-sm text-foreground/80">{c.name}</span>
+                        <span className="px-2.5 py-1 rounded-md bg-brand-soft text-brand text-xs font-bold tabular-nums min-w-[44px] text-center">
+                          {c.val.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                </div>
+
+                  {/* Feedback */}
+                  {s.comment && (
+                    <div className="border-t border-hairline px-6 py-4 bg-muted/20">
+                      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                        <MessageSquare className="size-3" /> Judge Feedback
+                      </div>
+                      <p className="text-sm leading-relaxed text-foreground/80">{s.comment}</p>
+                    </div>
+                  )}
+                </article>
               );
             })}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function SectionLabel({
+  children,
+  icon,
+  noMargin,
+}: {
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  noMargin?: boolean;
+}) {
   return (
-    <div className="flex justify-between items-baseline gap-3">
-      <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
-      <span
-        className={`text-xs font-semibold truncate ${highlight ? "text-brand" : ""}`}
-        title={value}
-      >
+    <div
+      className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-brand ${noMargin ? "" : "mb-2"}`}
+    >
+      {icon}
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, value, large }: { label: string; value: string; large?: boolean }) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+        {label}
+      </div>
+      <div className={large ? "text-xl font-bold tracking-tight" : "text-sm font-semibold"}>
         {value}
-      </span>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="text-right">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-base tabular-nums leading-tight mt-0.5">{value}</div>
+    </div>
+  );
+}
+
+function ScoreRing({ pct, value, max }: { pct: number; value: string; max: number }) {
+  const r = 56;
+  const c = 2 * Math.PI * r;
+  const offset = c - (pct / 100) * c;
+  return (
+    <div className="relative size-44">
+      <svg viewBox="0 0 140 140" className="size-full -rotate-90">
+        <circle cx="70" cy="70" r={r} stroke="currentColor" strokeWidth="10" fill="none" className="text-brand/15" />
+        <circle
+          cx="70"
+          cy="70"
+          r={r}
+          stroke="currentColor"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          className="text-brand transition-all"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="flex items-baseline">
+          <span className="text-4xl font-bold tabular-nums text-brand tracking-tight">{value}</span>
+          <span className="text-base font-semibold text-muted-foreground">/{max}</span>
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+          Final Score
+        </span>
+      </div>
     </div>
   );
 }
