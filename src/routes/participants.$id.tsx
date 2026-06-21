@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/app-shell";
 import { RequireProject } from "@/components/require-project";
 import { Button } from "@/components/ui/button";
 import { findParticipant, getGroup, getParticipantScores, rigaCriteria, rigaRanking } from "@/lib/demo-data";
-import { ArrowLeft, FileDown, Mail, Music, Users, Building2, Hash, Trophy, MessageSquareQuote } from "lucide-react";
+import { ArrowLeft, FileDown, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/participants/$id")({
   component: () => (
@@ -30,10 +30,11 @@ function ParticipantDetail() {
   const scores = getParticipantScores(p.id);
   const rank = rigaRanking.findIndex((r) => r.participantId === p.id);
   const ranking = rigaRanking.find((r) => r.participantId === p.id);
+  const criteriaKeys = ["technique", "expression", "presence"] as const;
 
   const avgPerCriterion = rigaCriteria.map((c, idx) => {
-    const key = idx === 0 ? "technique" : idx === 1 ? "expression" : "presence";
-    const vals = scores.map((s) => s[key as "technique" | "expression" | "presence"]);
+    const key = criteriaKeys[idx];
+    const vals = scores.map((s) => s[key]);
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
     return { id: c.id, name: c.name, avg, max: c.max };
   });
@@ -60,125 +61,139 @@ function ParticipantDetail() {
         }
       />
 
-      <div className="px-8 py-7 max-w-5xl space-y-6">
-        {/* 1. Performance details */}
-        <section className="rounded-xl border border-hairline bg-surface p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Performance details
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <DetailCell icon={<Hash className="size-3.5" />} label="Performance #" value={`#${p.number}`} />
-            <DetailCell icon={<Music className="size-3.5" />} label="Song" value={p.song} />
-            <DetailCell icon={<Users className="size-3.5" />} label="Group" value={group?.name ?? "—"} />
-            <DetailCell icon={<Building2 className="size-3.5" />} label="Studio" value={p.studio} />
+      <div className="px-8 py-6 max-w-6xl space-y-4">
+        {/* Summary row: performance info + standing + criterion bars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Performance info */}
+          <div className="rounded-xl border border-hairline bg-surface p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Performance
+            </div>
+            <dl className="space-y-2.5">
+              <Row label="Number" value={`#${p.number}`} />
+              <Row label="Song" value={p.song} highlight />
+              <Row label="Group" value={group?.name ?? "—"} />
+              <Row label="Studio" value={p.studio} />
+            </dl>
           </div>
-        </section>
 
-        {/* 2. Current standing */}
-        <section className="rounded-xl border border-hairline bg-gradient-to-br from-brand-soft via-brand-soft/40 to-transparent p-6">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand mb-4">
-            <Trophy className="size-3.5" /> Current standing
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Overall rank</div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-semibold tracking-tight tabular-nums">#{rank + 1}</span>
-                <span className="text-sm text-muted-foreground">of {rigaRanking.length}</span>
+          {/* Standing + criterion bars (spans 2) */}
+          <div className="md:col-span-2 rounded-xl border border-hairline bg-surface p-4 flex flex-col md:flex-row gap-5">
+            <div className="flex items-center gap-6 md:pr-6 md:border-r border-hairline">
+              <div className="text-center">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                  Rank
+                </div>
+                <div className="text-3xl font-semibold tabular-nums tracking-tight">
+                  {rank + 1}
+                  <span className="text-sm font-normal text-muted-foreground ml-0.5">
+                    /{rigaRanking.length}
+                  </span>
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Average total</div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-semibold tracking-tight tabular-nums">
+              <div className="text-center">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                  Avg score
+                </div>
+                <div className="text-3xl font-semibold tabular-nums tracking-tight text-brand">
                   {ranking ? ranking.total.toFixed(1) : "—"}
-                </span>
-                <span className="text-sm text-muted-foreground">/ 30</span>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground mb-1">By criterion</div>
+
+            <div className="flex-grow space-y-2.5 py-1 min-w-0">
               {avgPerCriterion.map((c) => (
-                <div key={c.id}>
-                  <div className="flex justify-between text-xs mb-1">
+                <div key={c.id} className="space-y-1">
+                  <div className="flex justify-between text-[11px] font-medium">
                     <span className="text-muted-foreground">{c.name}</span>
-                    <span className="tabular-nums font-medium">{c.avg.toFixed(1)} / {c.max}</span>
+                    <span className="tabular-nums">
+                      {c.avg.toFixed(1)}<span className="text-muted-foreground">/{c.max}</span>
+                    </span>
                   </div>
                   <div className="h-1.5 bg-brand/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-brand rounded-full" style={{ width: `${(c.avg / c.max) * 100}%` }} />
+                    <div
+                      className="h-full bg-brand rounded-full"
+                      style={{ width: `${(c.avg / c.max) * 100}%` }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* 3. Judge scores - card layout */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {/* Judge feedback grid */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Judge scores & comments
             </h3>
-            <span className="text-xs text-muted-foreground tabular-nums">{scores.length} judges</span>
+            <span className="text-[11px] text-muted-foreground tabular-nums">{scores.length} judges</span>
           </div>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {scores.map((s, i) => {
               const total = s.technique + s.expression + s.presence;
               const initials = s.judge.split(" ").map((n) => n[0]).slice(0, 2).join("");
               return (
-                <div key={i} className="rounded-xl border border-hairline bg-surface overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-3 bg-muted/30 border-b border-hairline">
-                    <div className="flex items-center gap-3">
-                      <div className="size-9 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-semibold">
+                <div
+                  key={i}
+                  className="rounded-xl border border-hairline bg-surface overflow-hidden flex flex-col"
+                >
+                  <div className="px-4 py-2.5 border-b border-hairline flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-7 rounded-full bg-brand/10 text-brand flex items-center justify-center text-[10px] font-semibold shrink-0">
                         {initials}
                       </div>
-                      <div>
-                        <div className="text-sm font-medium">{s.judge}</div>
-                        <div className="text-[11px] text-muted-foreground">Judge</div>
-                      </div>
+                      <span className="text-xs font-semibold truncate">{s.judge}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total</div>
-                      <div className="text-xl font-semibold tabular-nums">{total}<span className="text-xs text-muted-foreground font-normal"> / 30</span></div>
-                    </div>
+                    <span className="px-2 py-0.5 bg-brand-soft text-brand text-xs font-semibold rounded tabular-nums shrink-0">
+                      {total}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-3 divide-x divide-hairline">
-                    {[
-                      { name: rigaCriteria[0].name, val: s.technique, max: rigaCriteria[0].max },
-                      { name: rigaCriteria[1].name, val: s.expression, max: rigaCriteria[1].max },
-                      { name: rigaCriteria[2].name, val: s.presence, max: rigaCriteria[2].max },
-                    ].map((c) => (
-                      <div key={c.name} className="px-5 py-3 text-center">
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{c.name}</div>
-                        <div className="text-lg font-semibold tabular-nums">
-                          {c.val}<span className="text-xs text-muted-foreground font-normal">/{c.max}</span>
+                  <div className="p-4 flex-grow flex flex-col gap-3">
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { name: rigaCriteria[0].name, val: s.technique, max: rigaCriteria[0].max },
+                        { name: rigaCriteria[1].name, val: s.expression, max: rigaCriteria[1].max },
+                        { name: rigaCriteria[2].name, val: s.presence, max: rigaCriteria[2].max },
+                      ].map((c) => (
+                        <div key={c.name} className="text-center p-1.5 bg-muted/40 rounded">
+                          <div className="text-[9px] uppercase font-semibold tracking-wider text-muted-foreground truncate">
+                            {c.name}
+                          </div>
+                          <div className="text-xs font-semibold tabular-nums mt-0.5">
+                            {c.val}
+                            <span className="text-muted-foreground font-normal">/{c.max}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  {s.comment && (
-                    <div className="px-5 py-3 border-t border-hairline flex gap-2 text-sm">
-                      <MessageSquareQuote className="size-4 shrink-0 text-brand mt-0.5" />
-                      <p className="italic text-muted-foreground">"{s.comment}"</p>
+                      ))}
                     </div>
-                  )}
+                    {s.comment && (
+                      <p className="text-[11px] leading-relaxed italic text-muted-foreground">
+                        "{s.comment}"
+                      </p>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
 }
 
-function DetailCell({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div>
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-        {icon} {label}
-      </div>
-      <div className="text-sm font-medium">{value}</div>
+    <div className="flex justify-between items-baseline gap-3">
+      <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+      <span
+        className={`text-xs font-semibold truncate ${highlight ? "text-brand" : ""}`}
+        title={value}
+      >
+        {value}
+      </span>
     </div>
   );
 }
